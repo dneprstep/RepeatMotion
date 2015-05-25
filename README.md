@@ -2,6 +2,6 @@
 Unity3D
 Program has a simple menu interface. 
 
-Button "Play" starting game. We have 100 sec. to paint  shape.
+Button "Play" starting game. We have 100 sec. to paint  shape. Shape randomly change, when we "repeat gesturo".
 
 In menu "Shape Options" we can add shape to our program. Coordinates separator symbol ','. And we can add a shape by drawing it with the mouse (press button "Add drawing shape" ).
