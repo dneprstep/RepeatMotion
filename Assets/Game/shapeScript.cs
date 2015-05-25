@@ -10,15 +10,19 @@ public class shapeScript : MonoBehaviour
 	private List<Vector3> tempShapeList;
 	private List< List<Vector3> > dotCollection;
 
+	private int currentDrawingShape;
+
 	void Start () 
 	{
 		line = gameObject.AddComponent<LineRenderer> ();
 		line.material = new Material (Shader.Find ("Particles/Additive"));
 		line.SetVertexCount (0);
 		line.SetWidth (0.2f, 0.2f);
-		line.SetColors (Color.cyan, Color.gray);
+		line.SetColors (Color.red, Color.red);
 		line.useWorldSpace = true;
 		dotCollection = new List<List<Vector3>> ();
+
+		currentDrawingShape = 0;
 		
 		tempShapeList= readFromStringtoListVector3 ("0.0, 0.0, 2.0, 0.0, 0.0, 2.0, 0.0, 0.0,");
 		dotCollection.Add (tempShapeList);
@@ -30,11 +34,18 @@ public class shapeScript : MonoBehaviour
 		dotCollection.Add (tempShapeList);
 		
 	}
-	
+
+	public void enableLineRenderer(bool state)
+	{
+		line.enabled = state;
+	}
 	public void drawShape(int shapeNum)
 	{
-		if (shapeNum > dotCollection.Count || shapeNum < 0)
+		if (shapeNum >= dotCollection.Count || shapeNum < 0)
 			return;
+
+		currentDrawingShape = shapeNum;
+
 		line.SetVertexCount (dotCollection[shapeNum].Count);
 		for (int i=0; i<dotCollection[shapeNum].Count; i++) 
 		{
@@ -48,10 +59,23 @@ public class shapeScript : MonoBehaviour
 		
 		dotCollection.Add (tempShapeList);
 	}
+	public void addPoints(List<Vector3> inputList)
+	{
+		List<Vector3> tempList;
+		tempList = inputList;
+		if(inputList.Count>10)
+			dotCollection.Add (tempList);
+	}
 	public int shapesCount()
 	{
 		return dotCollection.Count;
 	}
+
+	public List<Vector3>  currentFigure()
+	{
+		return dotCollection [currentDrawingShape];
+	}
+
 	public List<Vector3> readFromStringtoListVector3(string shapeString)
 	{
 		int counterBegin = 0;
