@@ -18,7 +18,7 @@ public class shapeScript : MonoBehaviour
 		line.material = new Material (Shader.Find ("Particles/Additive"));
 		line.SetVertexCount (0);
 		line.SetWidth (0.2f, 0.2f);
-		line.SetColors (Color.red, Color.red);
+		line.SetColors (Color.yellow, Color.yellow);
 		line.useWorldSpace = true;
 		dotCollection = new List<List<Vector3>> ();
 
@@ -32,6 +32,10 @@ public class shapeScript : MonoBehaviour
 
 		tempShapeList= readFromStringtoListVector3 ("0.0, 0.0, 2.0, 0.0, 5.0, 3.0, 3.0, 3.0, 0.0, 0.0,");
 		dotCollection.Add (tempShapeList);
+
+		tempShapeList= readFromStringtoListVector3 ("0.0, 0.0, 6.0, 0.0, 4.5, 3.0, 1.5, 3.0, 0.0, 0.0,");
+		dotCollection.Add (tempShapeList);
+
 		
 	}
 

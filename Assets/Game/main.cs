@@ -7,14 +7,17 @@ using System.Linq;
 public class main : MonoBehaviour
 {
 	public int window;
+
 	private Rect windowRect = new Rect (10, 10, Screen.width - 20, Screen.height - 20);
 	private Rect labelRect = new Rect (15, 35, 150, 30);
 	private Rect scoreRect = new Rect (15, 85, 150, 30);
 	private Rect shapeFieldRect = new Rect (20, 150, 350, 20);
+
 	private LineRenderer line;
+
 	private List<Vector3> mousePointList;
 	private List<Vector3> tempDrawList;
-	//	private List<Vector3> drawingShape;
+
 	
 	private Color mainColor;
 	private Color grantedColor;
@@ -22,22 +25,31 @@ public class main : MonoBehaviour
 
 	private bool isMousePress;
 	private bool isAddShape;
+
 	private Vector3 mousePos;
-	private Vector2 pos;
-	private Vector2 size;
+
+	private Vector2 timerPos;
+	private Vector2 timerSize;
 	public float timerMax = 30.0f;
-	private float timer = 30.0f;
-	private float timerDiff = 5.0f;
+	private float timer;
+	private float timerDiff = 1.0f;
+
 	public Texture2D progressBarEmpty;
 	public Texture2D progressBarFull;
+
 	private bool drawState;
+
 	private GUIStyle labelStyle;
 	private GUIStyle scoreStyle;
 	private GUIStyle gameOverStyle;
+
 	private int score;
+
 	public string shapeField;
 	public static string shapeFieldDescription = "Введите координаты фигуры в виде x0,y0,x1,y1, (-10,+10) Разделитель запятая. \n После последней координаты тоже нужен разделитель!";
+
 	private int numLevel;
+
 	private shapeScript drawShapeScrypt;
 	
 	struct isStateChange
@@ -79,13 +91,15 @@ public class main : MonoBehaviour
 		tempDrawList = new List<Vector3> ();
 
 		window = 1;
+
+		timer = timerMax;
+
 		isMousePress = false;
 		isAddShape = false;
-
 		drawState = false;
 		
-		pos = new Vector2 (100.0f, 35.0f);
-		size = new Vector2 (150.0f, 15.0f);
+		timerPos = new Vector2 (100.0f, 35.0f);
+		timerSize = new Vector2 (150.0f, 15.0f);
 		
 		progressBarEmpty = Texture2D.blackTexture;
 		progressBarFull = Texture2D.whiteTexture;
@@ -114,7 +128,8 @@ public class main : MonoBehaviour
 	void OnGUI ()
 	{
 		GUI.BeginGroup (new Rect (Screen.width / 2 - 100, Screen.height / 2 - 100, 200, 200));
-		if (window == 1) {
+		if (window == 1) 
+		{
 			if (GUI.Button (new Rect (10, 30, 180, 30), "Play"))
 				window = 2;
 			if (GUI.Button (new Rect (10, 70, 180, 30), "Shape Options"))
@@ -122,7 +137,8 @@ public class main : MonoBehaviour
 			if (GUI.Button (new Rect (10, 110, 180, 30), "Exit"))
 				window = 5;
 		}
-		if (window == 3) {
+		if (window == 3) 
+		{
 			drawState = false;
 
 			if (GUI.Button (new Rect (10, 30, 180, 30), "Resume"))
@@ -143,11 +159,11 @@ public class main : MonoBehaviour
 
 			GUI.BeginGroup (new Rect (Screen.width / 2 - 300, Screen.height / 2 - 100, 1000, 400));
 			GUI.Label (new Rect (150.0f, 0.0f, 400.0f, 80.0f), "GAME OVER", gameOverStyle);
-			GUI.Label (new Rect (180.0f, 80.0f, 300.0f, 50.0f), "Your score:" + score, scoreStyle);
+			GUI.Label (new Rect (180.0f, 80.0f, 300.0f, 50.0f), "Your score: " + score, scoreStyle);
 			if (GUI.Button (new Rect (200, 150, 200, 30), "Restart")) 
 			{
 				timer = timerMax;
-				timerDiff = 5.0f;
+				timerDiff = 1.0f;
 				score = 0;
 				line.SetVertexCount (0);
 				mousePointList.Clear ();
@@ -211,9 +227,9 @@ public class main : MonoBehaviour
 	{
 		GUI.Label (labelRect, "Timer", labelStyle);
 		
-		GUI.BeginGroup (new Rect (windowRect.x, windowRect.y, size.x + labelRect.width, size.y + labelRect.height));
-		GUI.DrawTexture (new Rect (pos.x + labelRect.x, pos.y, size.x, size.y), progressBarEmpty);
-		GUI.DrawTexture (new Rect (pos.x + labelRect.x, pos.y, size.x * (timer / timerMax), size.y), progressBarFull);
+		GUI.BeginGroup (new Rect (windowRect.x, windowRect.y, timerSize.x + labelRect.width, timerSize.y + labelRect.height));
+		GUI.DrawTexture (new Rect (timerPos.x + labelRect.x, timerPos.y, timerSize.x, timerSize.y), progressBarEmpty);
+		GUI.DrawTexture (new Rect (timerPos.x + labelRect.x, timerPos.y, timerSize.x * (timer / timerMax), timerSize.y), progressBarFull);
 		GUI.EndGroup ();
 		
 		GUI.Label (scoreRect, "Score:", labelStyle);
@@ -222,7 +238,8 @@ public class main : MonoBehaviour
 		
 		
 		
-		if (GUI.Button (new Rect (15.0f, windowRect.height - 50, 180, 30), "Pause")) {
+		if (GUI.Button (new Rect (15.0f, windowRect.height - 50, 180, 30), "Pause")) 
+		{
 			if (window == 2) {
 				drawShapeScrypt.enableLineRenderer (false);
 				window = 3;
@@ -231,15 +248,18 @@ public class main : MonoBehaviour
 				window = 2;
 			}
 		}
-		if (GUI.Button (new Rect (15.0f, windowRect.height - 100, 180, 30), "Change shape")) {
+		if (GUI.Button (new Rect (15.0f, windowRect.height - 100, 180, 30), "Change shape")) 
+		{
 			numLevel = UnityEngine.Random.Range (0, drawShapeScrypt.shapesCount ());
-			timer = timerMax;
+	//		timer = timerMax;
 		}
 
 	}
 
 	void Update ()
 	{
+		//////////////////////////
+		//main window render
 		if (window == 2) 
 		{
 			line.enabled=true;
@@ -270,16 +290,21 @@ public class main : MonoBehaviour
 			}
 
 		}
+		//////////////////////////////////////
 
+
+
+		//////////////////////////////////////
+		/// add figures by drawing
 		if (window == 7 || window == 6) 
 		{
 			if (!isMousePress && isAddShape) 
 			{
-
 				List<Vector3> tempList = new List<Vector3> ();
 			
-				if (mousePointList.Count >= 10) {
-					tempList = figureApproximation (mousePointList);
+				if (mousePointList.Count >= 10) 
+				{
+					tempList = figureApproximation (mousePointList, 25.0f, 3.0f);
 
 					line.SetVertexCount (tempList.Count + 1);
 					for (int i=0; i<tempList.Count; i++)
@@ -293,13 +318,14 @@ public class main : MonoBehaviour
 			}
 
 		}
+		///////////////////////////
 
 
+		///////////////////////////////
+		/// mouse drawing
 		if (drawState == true)
 			mousePaint (mousePointList);
-
-
-		
+		////////////////////////////////////
 	}
 
 	public void mousePaint (List<Vector3> inputShapeList)
@@ -337,7 +363,7 @@ public class main : MonoBehaviour
 		if (inputPointList.Count <= 10)
 			return false;
 
-		tempDrawList = figureApproximation (inputPointList);
+		tempDrawList = figureApproximation (inputPointList, 25.0f, 3.0f);
 
 
 
@@ -357,6 +383,11 @@ public class main : MonoBehaviour
 		return false;
 	}
 
+
+	/// <summary>
+	/// Translates the figure to origin.
+	/// </summary>
+	/// <param name="inputFigure">Input figure.</param>
 	public void translateFigureToZero (List<Vector3> inputFigure)
 	{
 		if (inputFigure.Count <= 0)
@@ -393,6 +424,12 @@ public class main : MonoBehaviour
 */
 
 	}
+
+	/// <summary>
+	/// Translates the figure by the second param.
+	/// </summary>
+	/// <param name="inputFigure">Input figure.</param>
+	/// <param name="translatePoint">Translate point.</param>
 	public void translateFigure (List<Vector3> inputFigure, Vector3 translatePoint)
 	{
 		if (inputFigure.Count <= 0)
@@ -417,14 +454,19 @@ public class main : MonoBehaviour
 */		
 	}
 
-	public void scaleFigure (List<Vector3> inputFigure, float ratio)
+	/// <summary>
+	/// Scales the inputFigure by ratio.
+	/// </summary>
+	/// <param name="inputFigure">Input figure.</param>
+	/// <param name="ratio">Ratio.</param>
+	private void scaleFigure (List<Vector3> inputFigure, float ratio)
 	{
 		if (inputFigure.Count <= 0)
 			return;
-
+/*
 		Debug.Log ("Scale ratio" + ratio);
 
-/*		Debug.Log ("Before scale");
+		Debug.Log ("Before scale");
 		foreach (Vector3 i in inputFigure)
 			Debug.Log (i);
 */
@@ -437,6 +479,13 @@ public class main : MonoBehaviour
 */
 	}
 
+
+	/// <summary>
+	/// Return scale ratio left to right figures. (left/right)
+	/// </summary>
+	/// <returns>The ratio left to right figures.</returns>
+	/// <param name="leftFigure">Left figure.</param>
+	/// <param name="rightFigure">Right figure.</param>
 	private float scaleRatioLeftToRightFigures (List<Vector3> leftFigure, List<Vector3> rightFigure)
 	{
 		if (leftFigure.Count <= 0)
@@ -453,6 +502,12 @@ public class main : MonoBehaviour
 		return scaleRatio;
 	}
 
+
+	/// <summary>
+	/// Calculate figure magnitude. (Distance between min left point and max right)
+	/// </summary>
+	/// <returns>The magnitude.</returns>
+	/// <param name="inputFigure">Input figure.</param>
 	private float figureMagnitude (List<Vector3> inputFigure)
 	{
 		if (inputFigure.Count <= 0)
@@ -496,6 +551,15 @@ public class main : MonoBehaviour
 		return figureLenght;
 	}
 
+
+
+	/// <summary>
+	/// Compare two figures.
+	/// </summary>
+	/// <returns><c>true</c>, if compare was figuresed, <c>false</c> otherwise.</returns>
+	/// <param name="leftFigure">Left figure.</param>
+	/// <param name="rightFigure">Right figure.</param>
+	/// <param name="pointDiff">Point diff.</param>  larger more accurately
 	public bool figuresCompare (List<Vector3> leftFigure, List<Vector3> rightFigure, float pointDiff)
 	{
 		if (leftFigure.Count <= 0 || rightFigure.Count <= 0)
@@ -513,7 +577,9 @@ public class main : MonoBehaviour
 		
 		maxX = minX = leftFigure.First ().x;
 		maxY = minY = leftFigure.First ().y;
-		foreach (Vector3 x in leftFigure) {
+
+		foreach (Vector3 x in leftFigure) 
+		{
 			maxX = Mathf.Max (maxX, x.x);
 			maxY = Mathf.Max (maxY, x.y);
 			minX = Mathf.Min (minX, x.x);
@@ -523,8 +589,8 @@ public class main : MonoBehaviour
 		pogreshnostX = Mathf.Abs ((maxX - minX)) / pointDiff;
 		pogreshnostY = Mathf.Abs ((maxY - minY)) / pointDiff;
 
-		Debug.Log ("Compare pogreshnostX:" + pogreshnostX);
-		Debug.Log ("Compare pogreshnostY:" + pogreshnostY);
+//		Debug.Log ("Compare pogreshnostX:" + pogreshnostX);
+//		Debug.Log ("Compare pogreshnostY:" + pogreshnostY);
 
 
 
@@ -538,7 +604,8 @@ public class main : MonoBehaviour
 			Debug.Log (i);
 */
 
-		for (int i=0; i<tempLeftList.Count; i++) {
+		for (int i=0; i<tempLeftList.Count; i++) 
+		{
 			int index;
 			index = tempRightList.FindIndex (x
 			                        =>
@@ -568,11 +635,19 @@ public class main : MonoBehaviour
 
 	}
 
-	private List<Vector3> figureApproximation (List<Vector3> incomigFigure)
+	/// <summary>
+	/// Approximate figure.
+	/// </summary>
+	/// <returns>The approximation.</returns>
+	/// <param name="incomigFigure">Incomig figure.</param>
+	private List<Vector3> figureApproximation (List<Vector3> incomigFigure, float pogreshnostRate, float indexRate)
 	{
+	//	float pogreshnostRate = 25.0f;
+	//	float indexRate = 3.0f;
+
 		List<Vector3> outputFigure = new List<Vector3> ();
-		float maxX = 0, maxY = 0;
-		float minX = 0, minY = 0;
+		float maxX = 0.0f, maxY = 0.0f;
+		float minX = 0.0f, minY = 0.0f;
 		
 		float pogreshnostX = 0.0f, pogreshnostY = 0.0f;
 		
@@ -590,15 +665,15 @@ public class main : MonoBehaviour
 		Debug.Log ("minX:" + minX);
 		Debug.Log ("minY:" + minY);
 */		
-		pogreshnostX = Mathf.Abs ((maxX - minX)) / 25.0f;
-		pogreshnostY = Mathf.Abs ((maxY - minY)) / 25.0f;
+		pogreshnostX = Mathf.Abs ((maxX - minX)) / pogreshnostRate;
+		pogreshnostY = Mathf.Abs ((maxY - minY)) / pogreshnostRate;
 		
 		Debug.Log ("pogreshnostX:" + pogreshnostX);
 		Debug.Log ("pogreshnostY:" + pogreshnostY);
 
 
 		int currIndexPoint = 0;
-		int indexStep = Convert.ToInt32 ((Mathf.Abs (maxX - minX) + Mathf.Abs (maxY - minY)) / 3);
+		int indexStep = Convert.ToInt32 ((Mathf.Abs (maxX - minX) + Mathf.Abs (maxY - minY)) / indexRate);
 		Debug.Log ("indexStep:" + indexStep);
 		
 		float Xdiff = 0.0f;
