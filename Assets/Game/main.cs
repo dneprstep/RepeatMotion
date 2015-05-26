@@ -12,11 +12,12 @@ public class main : MonoBehaviour
 	private Rect labelRect = new Rect (15, 35, 150, 30);
 	private Rect scoreRect = new Rect (15, 85, 150, 30);
 	private Rect shapeFieldRect = new Rect (20, 150, 350, 20);
+	private Rect sliderRect = new Rect (10, Screen.height - 250, 100, 20);
+	private Rect drawAreaRect;
 
 	private LineRenderer line;
 
 	private List<Vector3> mousePointList;
-	private List<Vector3> tempDrawList;
 
 	
 	private Color mainColor;
@@ -30,7 +31,7 @@ public class main : MonoBehaviour
 
 	private Vector2 timerPos;
 	private Vector2 timerSize;
-	public float timerMax = 30.0f;
+	public float timerMax = 100.0f;
 	private float timer;
 	private float timerDiff = 1.0f;
 
@@ -47,11 +48,21 @@ public class main : MonoBehaviour
 
 	public string shapeField;
 	public static string shapeFieldDescription = "Введите координаты фигуры в виде x0,y0,x1,y1, (-10,+10) Разделитель запятая. \n После последней координаты тоже нужен разделитель!";
+	public static string sliderDiffRateDescription = "Коэффициент аппроксимации линий (меньше точнее)";
+	public static string sliderIndexRateDescription = "Частота проверки индексов аппроксимируемого массива (меньше чаще)";
+	public static string sliderCompareRateDescription = "Коэффициент точности сверки фигур (меньше проще)";
 
 	private int numLevel;
 
 	private shapeScript drawShapeScrypt;
-	
+	private float figureDiffRate;
+	private float figureIndexRate;
+	private float figureCompareRate;
+
+
+	///////////////////////////////
+	/// contain variable state 
+	/// uses in function figureApproximation
 	struct isStateChange
 	{
 		public bool isXDiff { get; set; }
@@ -88,7 +99,8 @@ public class main : MonoBehaviour
 		line.useWorldSpace = true;
 
 		mousePointList = new List<Vector3> ();
-		tempDrawList = new List<Vector3> ();
+
+		drawAreaRect = new Rect (shapeFieldRect.width + 80, 5, Screen.width - shapeFieldRect.width - 100, Screen.height-150);
 
 		window = 1;
 
@@ -106,7 +118,7 @@ public class main : MonoBehaviour
 		
 		
 		labelStyle = new GUIStyle ();
-		labelStyle.fontSize = 30;
+		labelStyle.fontSize = 30; 
 		labelStyle.normal.textColor = Color.white;
 		
 		
@@ -121,6 +133,11 @@ public class main : MonoBehaviour
 		gameOverStyle.normal.textColor = Color.red;
 		
 		numLevel = 0;
+
+		figureDiffRate = 10.0f;
+		figureIndexRate = 1.0f;
+		figureCompareRate = 5.0f;
+
 		
 		drawShapeScrypt = GameObject.Find ("GameObject").GetComponent<shapeScript> ();
 	}
@@ -137,6 +154,9 @@ public class main : MonoBehaviour
 			if (GUI.Button (new Rect (10, 110, 180, 30), "Exit"))
 				window = 5;
 		}
+
+		///////////////////
+		/// Pause GUI
 		if (window == 3) 
 		{
 			drawState = false;
@@ -150,7 +170,9 @@ public class main : MonoBehaviour
 		}
 		GUI.EndGroup ();
 		
-		
+
+		////////////////
+		/// Game over GUI
 		if (window == 4) 
 		{
 			drawState = false;
@@ -179,42 +201,103 @@ public class main : MonoBehaviour
 		if (window == 5)
 			Application.Quit ();
 
+		////////////////////
+		/// Shape add GUI (main menu)
+
 		if (window == 6) 
 		{
+			drawState=false;
+			line.enabled=true;
+			if(drawAreaRect.Contains (Event.current.mousePosition))
+				drawState=true;
+
+			GUI.Box (new Rect (5, 5, shapeFieldRect.width + 50, 250), "");
 			GUI.Label (new Rect (shapeFieldRect.x, shapeFieldRect.y - shapeFieldRect.height - 30, shapeFieldRect.width, 60), shapeFieldDescription);
 			shapeField = GUI.TextField (shapeFieldRect, "0.0, 0.0, 2.0, 0.0, 0.0, 2.0, 0.0, 0.0,");
 			if (GUI.Button (new Rect (shapeFieldRect.x + shapeFieldRect.width / 2 - 100, shapeFieldRect.y + shapeFieldRect.height + 10, 200, 30), "Add shape"))
 				drawShapeScrypt.addPoints (shapeField);
 			
 			if (GUI.Button (new Rect (10, 30, 180, 30), "Back"))
+			{
 				window = 1;
+				mousePointList.Clear ();
+				line.SetVertexCount (0);
+			}
 			
-			drawState = true;
-			if (GUI.Button (new Rect (Screen.width / 2 + 100, Screen.height / 2, 300, 60), "Add drawing shape"))
+			GUI.Box (new Rect (5, Screen.height - 300, shapeFieldRect.width + 50, 250), "Figure options");
+
+			figureDiffRate = GUI.HorizontalSlider (sliderRect, figureDiffRate, 1.0f, 30.0f);
+			GUI.Label (new Rect(sliderRect.x+sliderRect.width+10, sliderRect.y-20,sliderRect.width+170,50),sliderDiffRateDescription);
+
+			figureIndexRate = GUI.HorizontalSlider (new Rect (sliderRect.x,sliderRect.y+70,sliderRect.width,sliderRect.height), figureIndexRate, 1.0f, 10.0f);
+			GUI.Label (new Rect(sliderRect.x+sliderRect.width+10, sliderRect.y+sliderRect.height + 30, sliderRect.width+170, 50),sliderIndexRateDescription);
+
+			figureCompareRate = GUI.HorizontalSlider (new Rect (sliderRect.x,sliderRect.y+140,sliderRect.width,sliderRect.height), figureCompareRate, 1.0f, 10.0f);
+			GUI.Label (new Rect(sliderRect.x+sliderRect.width+10, sliderRect.y+sliderRect.height*2 + 80, sliderRect.width+170, 50),sliderCompareRateDescription);
+			
+			GUI.Box (drawAreaRect, Texture2D.blackTexture);
+			drawState = GUI.Toggle (new Rect (Screen.width-280, Screen.height - 30, 100, 20), drawState, "Рисовать");
+			
+			
+			if (GUI.Button (new Rect (Screen.width - 400, Screen.height - 100, 300, 60), "Add drawing shape")) 
 				isAddShape = true;
+			if (GUI.Button (new Rect (Screen.width - 650, Screen.height - 100, 200, 60), "Delete last shape")) 
+				drawShapeScrypt.deleteLastPoint ();
+
 		}
 
+		////////////////////
+		/// Shape add GUI (pause)
 		if (window == 7) 
 		{
+			drawState=false;
+			line.enabled=true;
+			if(drawAreaRect.Contains (Event.current.mousePosition))
+				drawState=true;
+
+			
+			GUI.Box(new Rect(5,5,shapeFieldRect.width+50,250),"");
 			GUI.Label (new Rect (shapeFieldRect.x, shapeFieldRect.y - shapeFieldRect.height - 30, shapeFieldRect.width, 60), shapeFieldDescription);
 			shapeField = GUI.TextField (shapeFieldRect, shapeField);
 			if (GUI.Button (new Rect (shapeFieldRect.x + shapeFieldRect.width / 2 - 100, shapeFieldRect.y + shapeFieldRect.height + 10, 200, 30), "Add shape"))
 				drawShapeScrypt.addPoints (shapeField);
 			
+			
 			if (GUI.Button (new Rect (10, 30, 180, 30), "Resume"))
+			{
 				window = 2;
+				mousePointList.Clear ();
+				line.SetVertexCount (0);
+			}
+					
+			
+			GUI.Box (new Rect (5, Screen.height - 300, shapeFieldRect.width + 50, 250), "Figure options");
+			
+			figureDiffRate = GUI.HorizontalSlider (sliderRect, figureDiffRate, 1.0f, 30.0f);
+			GUI.Label (new Rect(sliderRect.x+sliderRect.width+10, sliderRect.y-20,sliderRect.width+170,50),sliderDiffRateDescription);
+			
+			figureIndexRate = GUI.HorizontalSlider (new Rect (sliderRect.x,sliderRect.y+70,sliderRect.width,sliderRect.height), figureIndexRate, 1.0f, 10.0f);
+			GUI.Label (new Rect(sliderRect.x+sliderRect.width+10, sliderRect.y+sliderRect.height + 30, sliderRect.width+170, 50),sliderIndexRateDescription);
+			
+			figureCompareRate = GUI.HorizontalSlider (new Rect (sliderRect.x,sliderRect.y+140,sliderRect.width,sliderRect.height), figureCompareRate, 1.0f, 10.0f);
+			GUI.Label (new Rect(sliderRect.x+sliderRect.width+10, sliderRect.y+sliderRect.height*2 + 80, sliderRect.width+170, 50),sliderCompareRateDescription);
 
-			drawState = true;
-			if (GUI.Button (new Rect (Screen.width / 2 + 100, Screen.height / 2, 300, 60), "Add drawing shape"))
-				isAddShape = true;
+			GUI.Box (drawAreaRect,Texture2D.blackTexture);
+			
+			
+			if (GUI.Button (new Rect (Screen.width-400, Screen.height-100, 300, 60), "Add drawing shape"))
+			{
+				isAddShape=true;
+			}
+			drawState = GUI.Toggle(new Rect(Screen.width,Screen.height-30,50,20),drawState,"Рисовать");
 		}
 
 		
-		
+		////////////////////
+		/// main window GUI
 		if (window == 2) 
 		{
 			windowRect = GUI.Window (0, windowRect, WindowFunction, "");
-			drawState = true;
 			drawShapeScrypt.enableLineRenderer (true);
 
 			if ((numLevel >= 0) && (numLevel < drawShapeScrypt.shapesCount ()))
@@ -225,16 +308,23 @@ public class main : MonoBehaviour
 
 	void WindowFunction (int windowId)
 	{
+		drawState=false;
+		if(windowRect.Contains (Event.current.mousePosition))
+			drawState=true;
+
+
+
 		GUI.Label (labelRect, "Timer", labelStyle);
 		
+		//Timer
 		GUI.BeginGroup (new Rect (windowRect.x, windowRect.y, timerSize.x + labelRect.width, timerSize.y + labelRect.height));
 		GUI.DrawTexture (new Rect (timerPos.x + labelRect.x, timerPos.y, timerSize.x, timerSize.y), progressBarEmpty);
 		GUI.DrawTexture (new Rect (timerPos.x + labelRect.x, timerPos.y, timerSize.x * (timer / timerMax), timerSize.y), progressBarFull);
 		GUI.EndGroup ();
 		
+		//Score
 		GUI.Label (scoreRect, "Score:", labelStyle);
 		GUI.Label (new Rect (scoreRect.x + scoreRect.width, scoreRect.y, 50.0f, scoreRect.height), score.ToString (), scoreStyle);
-		
 		
 		
 		
@@ -248,16 +338,25 @@ public class main : MonoBehaviour
 				window = 2;
 			}
 		}
+		
+		//Change figure by button
 		if (GUI.Button (new Rect (15.0f, windowRect.height - 100, 180, 30), "Change shape")) 
 		{
 			numLevel = UnityEngine.Random.Range (0, drawShapeScrypt.shapesCount ());
-	//		timer = timerMax;
 		}
-
 	}
 
 	void Update ()
 	{
+		///////////////////////////////
+		/// mouse drawing
+		if (drawState == true)
+			mousePaint (mousePointList);
+		////////////////////////////////////
+
+
+
+
 		//////////////////////////
 		//main window render
 		if (window == 2) 
@@ -300,19 +399,23 @@ public class main : MonoBehaviour
 		{
 			if (!isMousePress && isAddShape) 
 			{
-				List<Vector3> tempList = new List<Vector3> ();
+
 			
-				if (mousePointList.Count >= 10) 
+				if (mousePointList.Count > 10) 
 				{
-					tempList = figureApproximation (mousePointList, 25.0f, 3.0f);
+					List<Vector3> tempList;
+					tempList = figureApproximation (mousePointList, figureDiffRate, figureIndexRate);
 
-					line.SetVertexCount (tempList.Count + 1);
-					for (int i=0; i<tempList.Count; i++)
-						line.SetPosition (i, tempList [i]);
-					line.SetPosition (tempList.Count, tempList [0]);
+					if(tempList.Count>0)
+					{
+						line.SetVertexCount (tempList.Count + 1);
+						for (int i=0; i<tempList.Count; i++)
+							line.SetPosition (i, tempList [i]);
+						line.SetPosition (tempList.Count, tempList.First());
 
-					translateFigureToZero (tempList);
-					drawShapeScrypt.addPoints (tempList);
+						translateFigureToZero (tempList);
+						drawShapeScrypt.addPoints (tempList);
+					}
 					isAddShape = false;
 				}
 			}
@@ -321,11 +424,6 @@ public class main : MonoBehaviour
 		///////////////////////////
 
 
-		///////////////////////////////
-		/// mouse drawing
-		if (drawState == true)
-			mousePaint (mousePointList);
-		////////////////////////////////////
 	}
 
 	public void mousePaint (List<Vector3> inputShapeList)
@@ -345,7 +443,8 @@ public class main : MonoBehaviour
 		}
 		
 		
-		if (isMousePress) {
+		if (isMousePress) 
+		{
 			mousePos = Camera.main.ScreenToWorldPoint (Input.mousePosition);
 			mousePos.z = 0.0f;
 			inputShapeList.Add (mousePos);
@@ -363,21 +462,25 @@ public class main : MonoBehaviour
 		if (inputPointList.Count <= 10)
 			return false;
 
-		tempDrawList = figureApproximation (inputPointList, 25.0f, 3.0f);
+		tempDrawList = figureApproximation (inputPointList, figureDiffRate, figureIndexRate);
 
 
 
-		line.SetVertexCount (tempDrawList.Count + 1);
-		for (int i=0; i<tempDrawList.Count; i++)
-			line.SetPosition (i, tempDrawList [i]);
-		line.SetPosition (tempDrawList.Count, tempDrawList [0]);
+		if (tempDrawList.Count > 0) 
+		{
+			line.SetVertexCount (tempDrawList.Count + 1);
+			for (int i=0; i<tempDrawList.Count; i++)
+				line.SetPosition (i, tempDrawList [i]);
+			line.SetPosition (tempDrawList.Count, tempDrawList.First());
 		
-		float scaleRatio = scaleRatioLeftToRightFigures (drawShapeScrypt.currentFigure (), tempDrawList);
-		scaleFigure (tempDrawList, scaleRatio);
-		translateFigureToZero (tempDrawList);
+			float scaleRatio = scaleRatioLeftToRightFigures (drawShapeScrypt.currentFigure (), tempDrawList);
+			scaleFigure (tempDrawList, scaleRatio);
+			translateFigureToZero (tempDrawList);
+		} else
+			return false;
 
 
-		if (figuresCompare (drawShapeScrypt.currentFigure (), tempDrawList, 5)) 
+		if (figuresCompare (drawShapeScrypt.currentFigure (), tempDrawList, figureCompareRate)) 
 			return true;
 
 		return false;
@@ -392,11 +495,6 @@ public class main : MonoBehaviour
 	{
 		if (inputFigure.Count <= 0)
 			return;
-/*
-		Debug.Log ("before translation");
-		foreach (Vector3 i in inputFigure)
-			Debug.Log (i);
-*/
 		int minXIndex = 0;
 		int minYIndex = 0;
 
@@ -411,17 +509,11 @@ public class main : MonoBehaviour
 
 
 		Vector3 minPoint = new Vector3 (inputFigure [minXIndex].x, inputFigure [minYIndex].y, inputFigure [minXIndex].z);
-		Debug.Log ("minXIndex" + minXIndex + "minYIndex" + minYIndex + " minPoint" + minPoint);
 
 		for (int i=0; i<inputFigure.Count; i++) {
 			inputFigure [i] = inputFigure [i] - minPoint;
 
 		}
-
-/*		Debug.Log ("after translation");
-		foreach (Vector3 i in inputFigure)
-			Debug.Log (i);
-*/
 
 	}
 
@@ -435,23 +527,12 @@ public class main : MonoBehaviour
 		if (inputFigure.Count <= 0)
 			return;
 
-		Debug.Log ("Translate Point" + translatePoint);
-/*		Debug.Log ("Before translation");
-		foreach (Vector3 i in inputFigure)
-			Debug.Log (i);
-*/
 
 		for (int i=0; i<inputFigure.Count; i++) 
 		{
 			inputFigure [i] = inputFigure [i] + translatePoint;	
 		}
 		
-
-/*		Debug.Log ("after translation");
-		foreach (Vector3 i in inputFigure)
-			Debug.Log (i);
-
-*/		
 	}
 
 	/// <summary>
@@ -463,20 +544,10 @@ public class main : MonoBehaviour
 	{
 		if (inputFigure.Count <= 0)
 			return;
-/*
-		Debug.Log ("Scale ratio" + ratio);
 
-		Debug.Log ("Before scale");
-		foreach (Vector3 i in inputFigure)
-			Debug.Log (i);
-*/
 		for (int i=0; i<inputFigure.Count; i++)
 			inputFigure [i] = inputFigure [i] * ratio;
 
-/*		Debug.Log ("After scale");
-		foreach (Vector3 i in inputFigure)
-			Debug.Log (i);
-*/
 	}
 
 
@@ -589,21 +660,6 @@ public class main : MonoBehaviour
 		pogreshnostX = Mathf.Abs ((maxX - minX)) / pointDiff;
 		pogreshnostY = Mathf.Abs ((maxY - minY)) / pointDiff;
 
-//		Debug.Log ("Compare pogreshnostX:" + pogreshnostX);
-//		Debug.Log ("Compare pogreshnostY:" + pogreshnostY);
-
-
-
-		/*
-		Debug.Log ("LeftFigure");
-		foreach (Vector3 i in leftFigure)
-			Debug.Log (i);
-
-		Debug.Log ("rightFigure");
-		foreach (Vector3 i in rightFigure)
-			Debug.Log (i);
-*/
-
 		for (int i=0; i<tempLeftList.Count; i++) 
 		{
 			int index;
@@ -612,22 +668,14 @@ public class main : MonoBehaviour
 			{
 				if (tempLeftList [i].x + pogreshnostX >= x.x && tempLeftList [i].x - pogreshnostX <= x.x) {
 					if (tempLeftList [i].y + pogreshnostY >= x.y && tempLeftList [i].y - pogreshnostY <= x.y) {
-						Debug.Log ("compare" + tempLeftList [i] + ":" + x);
 						return true;
 					} else {
-						Debug.Log (" not compare second" + tempLeftList [i] + ":" + x);
 						return false;
 					}
 				} else {
-					Debug.Log (" not compare first" + tempLeftList [i] + ":" + x);
 					return false;
 				}
 			});
-//			if (index >= 0 && index<tempRightList.Count)
-//				tempRightList.RemoveAt (i);
-//			else
-//				return false;
-
 			if (index == -1)
 				return false;
 		}
@@ -642,8 +690,6 @@ public class main : MonoBehaviour
 	/// <param name="incomigFigure">Incomig figure.</param>
 	private List<Vector3> figureApproximation (List<Vector3> incomigFigure, float pogreshnostRate, float indexRate)
 	{
-	//	float pogreshnostRate = 25.0f;
-	//	float indexRate = 3.0f;
 
 		List<Vector3> outputFigure = new List<Vector3> ();
 		float maxX = 0.0f, maxY = 0.0f;
@@ -660,21 +706,12 @@ public class main : MonoBehaviour
 			minY = Mathf.Min (minY, x.y);
 		}
 
-/*		Debug.Log ("maxX:" + maxX);
-		Debug.Log ("maxY:" + maxY);
-		Debug.Log ("minX:" + minX);
-		Debug.Log ("minY:" + minY);
-*/		
 		pogreshnostX = Mathf.Abs ((maxX - minX)) / pogreshnostRate;
 		pogreshnostY = Mathf.Abs ((maxY - minY)) / pogreshnostRate;
 		
-		Debug.Log ("pogreshnostX:" + pogreshnostX);
-		Debug.Log ("pogreshnostY:" + pogreshnostY);
-
 
 		int currIndexPoint = 0;
 		int indexStep = Convert.ToInt32 ((Mathf.Abs (maxX - minX) + Mathf.Abs (maxY - minY)) / indexRate);
-		Debug.Log ("indexStep:" + indexStep);
 		
 		float Xdiff = 0.0f;
 		float predXdiff = 0.0f;
@@ -716,10 +753,8 @@ public class main : MonoBehaviour
 				shapeChangeBefore = shapeChange;
 			}
 		}
-		
-		Debug.Log ("Figure points:" + outputFigure.Count);
-		return outputFigure;
 
+		return outputFigure;
 	}
 	
 }

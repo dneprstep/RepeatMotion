@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class shapeScript : MonoBehaviour 
 {
@@ -50,11 +51,12 @@ public class shapeScript : MonoBehaviour
 
 		currentDrawingShape = shapeNum;
 
-		line.SetVertexCount (dotCollection[shapeNum].Count);
+		line.SetVertexCount (dotCollection[shapeNum].Count+1);
 		for (int i=0; i<dotCollection[shapeNum].Count; i++) 
 		{
 			line.SetPosition (i, dotCollection [shapeNum] [i]);
 		}
+		line.SetPosition (dotCollection[shapeNum].Count, dotCollection [shapeNum].First());
 	}
 	public void addPoints(string shapeString)
 	{
@@ -65,10 +67,17 @@ public class shapeScript : MonoBehaviour
 	}
 	public void addPoints(List<Vector3> inputList)
 	{
-		List<Vector3> tempList;
-		tempList = inputList;
-		if(inputList.Count>10)
-			dotCollection.Add (tempList);
+		if (inputList.Count > 0) 
+		{
+			List<Vector3> tempList = new List<Vector3> (inputList);
+			if (inputList.Count > 0)
+				dotCollection.Add (tempList);
+		}
+	}
+	public void deleteLastPoint()
+	{
+		if (dotCollection.Count > 1)
+			dotCollection.RemoveAt (dotCollection.Count - 1);
 	}
 	public int shapesCount()
 	{
